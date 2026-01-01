@@ -25,7 +25,7 @@ Aşağıda, bir belgenin sisteme girişinden dijital çıktıya dönüşmesine k
   <img src="assets/screenshots/screen_01.jpg" width="300" alt="Dashboard" />
   <p><em>Ana Kontrol Paneli ve Klasör Yapısı</em></p>
   <br>
-  <img src="assets/screenshots/ostim_belge_crop.png" width="450" alt="Process Input" />
+  <img src="assets/screenshots/ostim_belge_crop.png" width="300" alt="Process Input" />
   <p><em>İşlenecek Ham Belge Örneği</em></p>
 </div>
 
