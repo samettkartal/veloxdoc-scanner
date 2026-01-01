@@ -20,7 +20,7 @@ Veri kaliciligi icin cihaz uzerinde calisan, yuksek performansli ve sifreli bir 
 
 ## 2. Dijitallestirme Sureci ve Algoritmik Pipeline
 
-Sistem, ham kameradan alinan goruntuyu (Raw Input) yuksek kaliteli bir dijital belgeye donusturmek icin 4 kritik asamadan olusan bir pipeline kullanir.
+Sistem, ham kameradan alinan goruntuyu (Raw Input) yuksek kaliteli bir dijital belgeye donusturmek icin 5 kritik asamadan olusan bir pipeline kullanir.
 
 ### **İşlenecek Örnek Belge (Sample Document)**
 Aşağıdaki görsel, sistemin işleme kapasitesini göstermek adına referans olarak kullanılan örnek bir öğrenci belgesidir. Sistem, bu belgeyi karmaşık zeminlerden ayırarak dijitalleştirecektir.
@@ -51,20 +51,24 @@ Bu islem sonucunda bir **Olasilik Haritasi (Probability Map)** uretilir. Bu hari
 Yapay zeka tarafindan uretilen Binary Maske, belgenin kabaca nerede oldugunu soyler ancak geometrik duzeltme icin kesin kose koordinatlarina ihtiyac vardir. Bu asamada **OpenCV** kutuphanesi devreye girer.
 
 1.  **Kontur Analizi (Contour Finding):** Maske uzerindeki en dis sinirlar (External Contours) taranir.
-2.  **Cokgen Yaklasimi (ApproxPolyDP):** Tespit edilen konturlar genellikle pruzlu kenarlara sahiptir. **Douglas-Peucker Algoritmasi** kullanilarak, bu karmaşık şekiller daha az köseye sahip cokgenlere indirgenir. Algoritma, dort koseye sahip en buyuk alani "Belge Dortgeni" olarak kabul eder.
-3.  **Homografi Matrisi (Homography Transformation):** Tespit edilen 4 nokta (Kaynak) ile hedefledigimiz duz dikdortgen (Hedef) arasindaki iliskiyi kuran 3x3'luk bir donusum matrisi hesaplanir.
-4.  **Warping:** Bu matris kullanilarak, goruntunun her bir pikseli yeniden haritalandirilir (Remapping). Sonuc olarak, acili ve perspektif hatasi iceren goruntu, sanki tam tepeden (90 derece aciyla) cekilmis gibi duzlestirilir.
+2.  **Cokgen Yaklasimi (ApproxPolyDP):** Tespit edilen konturlar genellikle pruzlu kenarlara sahiptir. **Douglas-Peucker Algoritmasi** kullanilarak, bu karmasık şekiller daha az köseye sahip cokgenlere indirgenir. Algoritma, dort koseye sahip en buyuk alani "Belge Dortgeni" olarak kabul eder.
+3.  **Warping (Perspektif Donusumu):** Tespit edilen 4 nokta ile ideal dikdortgen arasindaki **Homografi Matrisi** hesaplanir ve goruntu duzlestirilir.
 
 <div align="center">
-  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif ve Homografi" />
+  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif Duzeltme" />
 </div>
 
-### ADIM 4: Kontrast Iyilestirme ve Goruntu Zenginlestirme (Post-Processing)
-Geometrik olarak duzeltilmis goruntu, henuz dijital bir belge kalitesinde degildir; uzerinde farkli isik kosullarindan kaynaklanan golgeler ve renk sapmalari bulunur. VeloxDoc, bu goruntuyu "tarayici ciktisi" standardina getirmek icin gelismis bir sinyal isleme hatti uygular.
+### ADIM 4: Tahribatsız Düzenleme ve Filtreleme (Non-Destructive Editing)
+Dijitalleştirme işlemi sadece bir "anlık görüntü" değildir; kullanıcı belge üzerinde sonradan düzenlemeler yapabilmelidir. VeloxDoc, orijinal görüntü verisini değiştirmeden çalışan **Katmanlı (Layered) Mimari** kullanır.
 
-*   **Adaptif Esikleme (Adaptive Thresholding):** Standart esikleme (Global Thresholding) tum goruntu icin tek bir isik degeri kullanir, bu da golgeli alanlarin tamamen siyah cikmasina neden olur. VeloxDoc ise **Adaptif Esikleme** kullanir. Goruntu kucuk bloklara bolunur ve her blok icin komsu piksellerin ortalamasina gore dinamik bir esik degeri hesaplanir. Bu sayede, kağıdın bir kosesi karanlikta kalsa bile, oradaki metinler basariyla arka plandan ayristirilir.
-*   **Histogram Esitleme:** Goruntunun histogrami analiz edilerek en koyu (murekkep) ve en acik (kagit) noktalar arasindaki mesafe genisletilir (Contrast Stretching).
-*   **OCR:** Google ML Kit OCR motoruna beslenerek metinler dijital veriye donusturulur.
+Flutter'ın `CustomPainter` motoru üzerine inşa edilen bu sanal kanvas katmanı, kullanıcının belge üzerine çizim yapmasını, not almasını veya filtre (Siyah/Beyaz, Magic Color) uygulamasını sağlar. Bu işlemler orijinal veriyi bozmaz (Non-Destructive); kullanıcı dilediği zaman tüm çizimleri geri alabilir veya filtreyi değiştirebilir.
+
+<div align="center">
+  <img src="assets/screenshots/screen_edit.png" width="300" alt="Non-Destructive Editing" />
+</div>
+
+### ADIM 5: Kontrast Iyilestirme ve OCR (Final Sonuç)
+Son aşamada, geometrik ve görsel olarak iyileştirilmiş belge elde edilir. **Adaptif Eşikleme** (Adaptive Thresholding) ile gölgeler temizlenir, **Histogram Eşitleme** ile kontrast artırılır. Temizlenen bu görüntü **Google ML Kit OCR** motoruna beslenerek metinler dijital veriye dönüştürülür.
 
 <div align="center">
   <img src="assets/screenshots/screen_05.jpg" width="300" alt="Final Sonuc ve OCR" />
