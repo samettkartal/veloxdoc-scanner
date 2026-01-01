@@ -69,7 +69,7 @@ flutter:
     - assets/scan_model_pro.tflite
 
 flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
+  android: true
+  ios: false
   image_path: "assets/launcher_icon.png"
   min_sdk_android: 21
