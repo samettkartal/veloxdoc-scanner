@@ -29,42 +29,32 @@ Aşağıdaki görsel, sistemin işleme kapasitesini göstermek adına referans o
   <img src="assets/screenshots/ostim_belge_crop.png" width="450" alt="İşlenecek Örnek Belge" />
 </div>
 
-### ADIM 1: Kategorizasyon ve Metadata Isleme
-Dijitallestirme sureci, verinin dogru siniflandirilmasi ile baslar. Ham goruntu islenmeden once, kullanici tarafindan veya otomatik olarak kategorize edilir. Bu adim, goruntu isleme hattindan cikacak olan sonucun hangi formatta (Siyah-Beyaz, Gri Tonlama veya Renkli) saklanacagina dair ipuclari tasir. Ornegin bir "Kimlik Karti" icin renk dogrulugu kritikken, bir "Ders Notu" icin yuksek kontrast ve siyah-beyaz ayrimi daha onemlidir. Sistem, secilen kategoriye gore post-processing (son isleme) parametrelerini dinamik olarak ayarlar.
+### ADIM 1: Manuel Onay ve Hassas Düzenleme (Manual Adjustment)
+Süreç, kullanıcının belge üzerinde tam kontrol sağlamasıyla başlar. Yapay zeka %98 oranında doğru tespit yapsa da, son söz her zaman kullanıcıdadır. **Büyüteç (Magnifier)** özelliği sayesinde köşe noktaları mikroskobik hassasiyette ayarlanabilir. Bu, "Human-in-the-loop" (Döngüdeki İnsan) yaklaşımının en önemli parçasıdır.
+
+<div align="center">
+  <img src="assets/screenshots/screen_edit.png" width="300" alt="Manual Edge Adjustment" />
+</div>
+
+### ADIM 2: Kategorizasyon ve Metadata Isleme
+Onaylanan belge, anlamsal olarak kategorize edilir (Fatura, Kimlik vb.). Bu adımda kullanıcı, belgenin meta verilerini düzenler. Sistem, seçilen kategoriye göre görüntü işleme parametrelerini (renk uzayı, sıkıştırma oranı) otomatik olarak optimize eder.
 
 <div align="center">
   <img src="assets/screenshots/screen_02.jpg" width="300" alt="Kategorizasyon" />
 </div>
 
-### ADIM 2: Yapay Zeka ile Otonom Belge Tespiti (AI Segmentation)
-VeloxDoc'un en kritik bilesenlerinden biri, ham kamera goruntusu uzerindeki belgeyi zemin (masa, hali vb.) uzerinden ayirt eden yapay zeka moduludur. Geleneksel yontemler (Canny Edge Detection gibi), goruntu uzerindeki tum keskin kenarlari tespit ettigi icin, karmasik zeminlerde (ornegin ahsap desenli masa veya karisik kablolar) basarisiz olur.
-
-VeloxDoc, bu problemi asmak icin **Semantik Segmentasyon (Semantic Segmentation)** yontemini kullanir. Ozel olarak egitilmis hafifletilmis bir **U-Net** modeli (MobileNetV2 backbone ile), 256x256 cozunurlugune indirgenmis kamera goruntusunu girdi olarak alir. Model, goruntudeki her bir pikseli "Belge" veya "Arkaplan" olarak siniflandirir.
-
-Bu islem sonucunda bir **Olasilik Haritasi (Probability Map)** uretilir. Bu harita, goruntunun hangi bolgelerinin belgeye ait oldugunu gosteren gri tonlamali bir maskedir. Sistem, bu haritayi belirli bir esik degerinden (Thresholding) gecirerek **Binary Mask** (Siyah-Beyaz Maske) elde eder. Bu yontem, gurultulu ve dusuk isikli ortamlarda dahi %98'in uzerinde tespit dogrulugu saglar.
+### ADIM 3: Yapay Zeka ile Otonom Belge Tespiti (AI Segmentation)
+Arka planda çalışan **U-Net** modeli, görüntüdeki belgeyi zemin üzerinden ayrıştırır. Klasik kenar tespitinin aksine, doku ve desen analizi yaparak karmaşık zeminlerde bile (ahşap masa, halı) belgeyi izole eder. Bu adımda üretilen **Olasılık Haritasi (Probability Map)**, belgenin geometrik sınırlarını belirler.
 
 <div align="center">
   <img src="assets/screenshots/screen_03.jpg" width="300" alt="Yapay Zeka Segmentasyonu" />
 </div>
 
-### ADIM 3: Geometrik Rektifikasyon ve Perspektif Duzeltme
-Yapay zeka tarafindan uretilen Binary Maske, belgenin kabaca nerede oldugunu soyler ancak geometrik duzeltme icin kesin kose koordinatlarina ihtiyac vardir. Bu asamada **OpenCV** kutuphanesi devreye girer.
-
-1.  **Kontur Analizi (Contour Finding):** Maske uzerindeki en dis sinirlar (External Contours) taranir.
-2.  **Cokgen Yaklasimi (ApproxPolyDP):** Tespit edilen konturlar genellikle pruzlu kenarlara sahiptir. **Douglas-Peucker Algoritmasi** kullanilarak, bu karmasık şekiller daha az köseye sahip cokgenlere indirgenir. Algoritma, dort koseye sahip en buyuk alani "Belge Dortgeni" olarak kabul eder.
-3.  **Warping (Perspektif Donusumu):** Tespit edilen 4 nokta ile ideal dikdortgen arasindaki **Homografi Matrisi** hesaplanir ve goruntu duzlestirilir.
+### ADIM 4: Geometrik Rektifikasyon (Perspective Correction)
+Tespit edilen sınırlar ve kullanıcının onayladığı köşe noktaları kullanılarak **Homografi Matrisi** hesaplanir. **OpenCV** kütüphanesi, bu matrisi kullanarak açılı duran belgeyi "Warp" işlemi ile düzleştirir. Sonuç olarak, perspektif hatası giderilmiş, dikdörtgen formda bir görüntü elde edilir.
 
 <div align="center">
   <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif Duzeltme" />
-</div>
-
-### ADIM 4: Manuel Onay ve Hassas Düzenleme (Manual Adjustment)
-Yapay zeka %98 oranında doğru tespit yapsa da, son kontrol her zaman kullanıcıdadır. Kamera çekimi sonrası, tespit edilen köşe noktaları ekranda kullanıcıya sunulur. Eğer sistem belgenin bir köşesini yanlış algıladıysa (örn. masadaki başka bir nesneye takıldıysa), kullanıcı bu adımda müdahale edebilir.
-
-Kullanıcı, köşe noktalarını sürüklerken devreye giren **Büyüteç (Magnifier)** özelliği sayesinde pikselleri yakından görür ve mikroskobik hassasiyette düzeltme yapabilir. Bu aşama, çıktının geometrik olarak kusursuz olmasını garanti eden "İnsan-Makine İşbirliği" katmanıdır. Onay verildiği anda perspektif düzeltme (Warp) işlemi uygulanır.
-
-<div align="center">
-  <img src="assets/screenshots/screen_edit.png" width="300" alt="Manual Edge Adjustment" />
 </div>
 
 ### ADIM 5: Kontrast Iyilestirme ve OCR (Final Sonuç)
