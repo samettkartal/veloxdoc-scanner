@@ -1,6 +1,6 @@
 # VeloxDoc (Akıllı Belge Tarayıcı)
 
-**VeloxDoc**, Flutter altyapısı ile geliştirilmiş, yapay zeka destekli, yüksek performanslı bir mobil belge tarama ve yönetim uygulamasıdır. Cihaz üzerinde çalışan gelişmiş görüntü işleme algoritmaları sayesinde belgeleri otomatik olarak algılar, perspektif düzeltmesi yapar ve metin haline dönüştürür.
+**VeloxDoc**, derin öğrenme destekli bir mobil belge rektifikasyon (düzeltme) ve dijitalleştirme sistemidir. Fiziksel belgeleri mobil cihaz kamerasıyla algılar, perspektif hatalarını giderir ve yüksek kontrastlı, dijital formatlara dönüştürür.
 
 <div align="center">
   <h3>Uygulama Arayüzü & Akış</h3>
@@ -15,77 +15,53 @@
 
 ---
 
-## 🚀 Proje Hakkında
-Bu proje, mobil cihazları güçlü birer taşınabilir tarayıcıya dönüştürmeyi amaçlar. Sadece fotoğraf çekmekle kalmaz, görüntüyü analiz ederek **belge sınırlarını (edge detection)** belirler ve **perspektif çarpıklığını (perspective warp)** otomatik olarak düzeltir.
+## 🎯 Problem ve Çözüm Yaklaşımı
 
-### Temel Özellikler
-- **Otomatik Belge Algılama:** Kamera akışı üzerinden anlık belge tespiti.
-- **Akıllı Kırpma:** Köşe noktalarının yapay zeka ve görüntü işleme ile belirlenmesi.
-- **Perspektif Düzeltme:** Açılı çekilen belgelerin düzleştirilmesi.
-- **Gelişmiş Filtreler:** Siyah-beyaz, gri tonlama ve "sihirli renk" filtreleri.
-- **OCR (Optik Karakter Tanıma):** Taranan belgedeki metinlerin ayıklanması.
-- **PDF Dışa Aktarma:** Çoklu sayfaların tek bir PDF dosyası olarak paylaşılması.
-- **Kategori Yönetimi:** Belgelerin (Fatura, Kimlik, Ders Notu vb.) klasörlenmesi.
+**Problem:** Fiziksel belgelerin mobil cihazlarla dijitalleştirilmesi sürecinde, **perspektif bozuklukları** (açılı çekim) ve **homojen olmayan aydınlatma** koşulları, elde edilen verinin okunabilirliğini ve işlenebilirliğini doğrudan düşürmektedir. Standart yöntemler, belgeyi arka plandan izole etmekte genellikle yetersiz kalır.
+
+**Çözüm:** VeloxDoc, bu kısıtlamaları aşmak için **semantik segmentasyon** tabanlı bir yapay zeka mimarisi kullanır. Sistem, görüntü üzerindeki belge alanını otonom olarak algılar, geometrik rektifikasyon uygular ve perspektif hatasından arındırılmış, normalize edilmiş dijital bir çıktı üretir.
 
 ---
 
-## 🛠️ Kullanılan Teknolojiler ve Mimari
+## 🏗️ Sistem Mimarisi ve Görüntü İşleme Hattı (Pipeline)
 
-Proje, **Clean Architecture** prensiplerine uygun olarak ve performans odaklı kütüphanelerle geliştirilmiştir.
+Uygulama, ham kamera görüntüsünü dijital belgeye dönüştürmek için 5 aşamalı hibrit bir işlem hattı kullanır:
 
-### Core Stack
-- **Framework:** [Flutter](https://flutter.dev/) (Dart)
-- **State Management:** Provider / Riverpod (Reaktif durum yönetimi)
-- **Database:** [Hive](https://docs.hivedb.dev/) (NoSQL, Key-Value, Yüksek performanslı yerel veritabanı)
-
-### 🧠 Yapay Zeka ve Görüntü İşleme (AI & CV)
-Uygulamanın "beyni" olan görüntü işleme hattı şu teknolojileri kullanır:
-
-1.  **OpenCV (via `opencv_dart`):**
-    -   Görüntü ön işleme (Grayscale, Gaussian Blur).
-    -   Kenar tespiti (Canny Edge Detection).
-    -   Kontur analizi ve dörtgen tespiti (Contour Approximation).
-    -   Perspektif dönüşümleri (Perspective Transform).
-
-2.  **TensorFlow Lite (`tflite_flutter`):**
-    -   **Model:** `scan_model_pro.tflite` & `unet_document_scanner.tflite`
-    -   **Görev:** Karmaşık zeminlerde belgenin segmentasyonu (U-Net mimarisi). Geleneksel OpenCV yöntemlerinin yetersiz kaldığı düşük kontrastlı durumlarda devreye girer.
-
-3.  **Google ML Kit (`google_mlkit_text_recognition`):**
-    -   Cihaz içi (On-device) OCR işlemleri için kullanılır.
-    -   Türkçe dahil çoklu dil desteği ile yüksek doğrulukta metin okuma sağlar.
-
-### Diğer Kritik Kütüphaneler
--   **Kamera:** `camera` (Özel kamera arayüzü kontrolü için).
--   **PDF Yönetimi:** `pdf` & `printing` (Vektörel PDF oluşturma).
--   **Depolama:** `path_provider` & `permission_handler`.
+1.  **Girdi (Input):** Yüksek çözünürlüklü ham kamera görüntüsü alınır.
+2.  **Ön İşleme (Pre-processing):** Görüntü, AI modelinin gereksinimi olan 256x256 boyutuna indirgenir (Downsampling) ve normalize edilir.
+3.  **Yapay Zeka (Inference):** **U-Net** tabanlı TFLite modeli ile piksel tabanlı belge/zemin ayrıştırması (binary segmentation) yapılır.
+4.  **Son İşleme (Post-processing):** Oluşturulan maske üzerinde OpenCV ile kontur analizi yapılır ve belgenin 4 köşe koordinatı tespit edilir.
+5.  **Dönüşüm (Transformation):** Hesaplanan perspektif matrisleri ile görüntü çarpıtılarak (warping) kuş bakışı (bird's-eye view) forma getirilir.
 
 ---
 
-## ⚙️ Geliştirme Yöntemleri
-Proje geliştirilirken aşağıdaki metodolojiler izlenmiştir:
--   **Modular Design:** Kamera, Düzenleme, Galeri ve Ayarlar modülleri birbirinden bağımsız geliştirildi.
--   **Offline-First:** Tüm işlemler (AI, OCR, Kayıt) internet bağlantısı gerektirmeden cihaz üzerinde çalışır.
--   **Performance Optimization:** Görüntü işleme gibi ağır yükler, ana UI thread'ini bloklamamak adına arka planda (Isolate) veya native C++ katmanında (OpenCV/TFLite) çalıştırılır.
+## 🎨 Kontrast ve Görüntü İyileştirme (Image Enhancement)
+
+Belge sınırları düzeltildikten sonra, metin okunabilirliğini maksimize etmek için özel bir **Kontrast Geliştirme** modülü devreye girer. Bu modül, özellikle silik metinlerde ve gölgeli çekimlerde kritik rol oynar.
+
+*   **Adaptif Eşikleme (Adaptive Thresholding):** Görüntü üzerindeki aydınlatma farklarını analiz ederek, her bölge için dinamik bir eşik değeri belirler. Bu sayede gölgede kalan metinler bile net bir şekilde arka plandan ayrıştırılır.
+*   **Histogram Eşitleme:** Görüntünün histogram dağılımını genişleterek, siyah (metin) ve beyaz (kağıt) arasındaki kontrast farkını artırır.
+*   **Gürültü Giderme (Denoising):** Sensör gürültülerini ve kağıt üzerindeki lekeleri temizleyerek pürüzsüz bir zemin oluşturur.
 
 ---
 
-## 📦 Kurulum
+## 📋 Örnek Kullanım Senaryosu
 
-Projeyi yerel ortamınızda çalıştırmak için:
+Aşağıda, açılı ve düşük ışıkta çekilmiş bir öğrenci belgesinin VeloxDoc ile nasıl işlendiği görülmektedir. Sistem, belgeyi masadan kusursuz bir şekilde ayırmış ve sanki doğrudan bir tarayıcıdan çıkmış gibi dijitalleştirmiştir.
 
-1.  Repoyu klonlayın:
-    ```bash
-    git clone https://github.com/samettkartal/veloxdoc-scanner.git
-    ```
-2.  Bağımlılıkları yükleyin:
-    ```bash
-    flutter pub get
-    ```
-3.  Uygulamayı çalıştırın:
-    ```bash
-    flutter run
-    ```
+<div align="center">
+  <img src="assets/documents/ostim_belge_crop.png" width="400" alt="İşlenmiş Belge Örneği" />
+  <p><i>İşlenmiş ve perspektifi düzeltilmiş çıktı</i></p>
+</div>
+
+---
+
+## 🛠️ Teknik Altyapı
+-   **Framework:** Flutter (Dart)
+-   **AI Engine:** TensorFlow Lite (Custom U-Net Model)
+-   **CV Library:** OpenCV (C++ Native) via `opencv_dart`
+-   **OCR:** Google ML Kit
+-   **Database:** Hive (NoSQL, Encrypted)
 
 ---
 *Geliştirici: Samet Kartal*
