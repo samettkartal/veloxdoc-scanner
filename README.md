@@ -1,71 +1,59 @@
 # VeloxDoc: Hibrit Goruntu Isleme ve Dijital Arsivleme Sistemi
 
-VeloxDoc, fiziksel belgelerin mobil cihazlar araciligiyla dijital ortama aktarilmasini saglayan, uctan uca (end-to-end) bir goruntu isleme ve dijital arsivleme cozumudur. Proje, ham goruntu verisini anlamlandirmak icin **Derin Ogrenme (Deep Learning - TFLite)** ve **Bilgisayarli Goru (OpenCV)** kutuphanelerini hibrit bir yapida kullanir.
+VeloxDoc, fiziksel belgelerin mobil cihazlar aracılığıyla dijital ortama aktarılmasını sağlayan, uçtan uca (end-to-end) bir görüntü işleme ve dijital arşivleme çözümüdür. Sıradan kamera uygulamalarından farklı olarak, ham görüntü verisini anlamlandırmak ve geometrik bozuklukları gidermek için **Derin Öğrenme (Deep Learning - TFLite)** ve **Bilgisayarlı Görü (OpenCV)** disiplinlerini hibrit bir mimaride birleştirir.
 
-Asagidaki teknik dokumantasyon, sistemin **gercek** mimarisini ve kod tabanindaki (Codebase) somut isleyisi detaylandirmaktadir.
+## Teknik Mimari ve Algoritmik Altyapı
+
+### 1. Sistem Mimarisi (Clean Architecture & Hive)
+Proje, modern mobil geliştirme standartlarına uygun olarak **Clean Architecture** prensipleriyle tasarlanmıştır. İş mantığı (Business Logic), veri katmanı (Data Layer) ve kullanıcı arayüzü (Presentation Layer) tam izolasyon içindedir.
+Veri kalıcılığı için cihaz üzerinde çalışan, yüksek performanslı ve şifrelenebilir (AES-256) **Hive NoSQL** veritabanı kullanılmıştır. Bu yapı, binlerce belgeyi milisaniyeler içinde indeksleyebilir ve sorgulayabilir. `FolderModel` yapısı sayesinde belgeler hiyerarşik olarak yönetilir.
+
+### 2. Hibrit Görüntü İşleme Pipeline'ı
+Sistemin çekirdeğinde, üç aşamalı bir görüntü işleme hattı bulunur:
+1.  **AI Regresyon (Koordinat Tahmini):** Geleneksel segmentasyon (U-Net) modellerinin aksine, VeloxDoc hız odaklı bir **Coordinate Regression** modeli kullanır (`scan_model_pro.tflite`). Model, 224x224 boyutundaki girdiyi işler ve doğrudan belgenin 4 köşe noktasını (x,y) tahmin eder. Bu yöntem, piksel piksel tarama yapmadığı için mobil cihazlarda çok daha düşük gecikme (latency) ile çalışır.
+2.  **Fallback Mekanizması (OpenCV):** Eğer AI modelinin güven skoru (confidence) düşükse, sistem otomatik olarak klasik Computer Vision yöntemlerine döner. Görüntü Gri Skalaya çevrilir, Gaussian Blur ile gürültüden arındırılır ve Canny Edge Detection ile kenarlar bulunur. `findContours` ve `approxPolyDP` algoritmalarıyla en büyük dörtgen geometrik olarak hesaplanır.
+3.  **Geometrik Rektifikasyon (Warp Perspective):** Elde edilen 4 köşe noktası (Kaynak) ve hedeflenen çıktı boyutları (Hedef) kullanılarak 3x3'lük bir **Homografi Matrisi** hesaplanır. Görüntü bu matris ile yeniden haritalandırılarak (Remapping), açılı duran belge kuş bakışı formuna getirilir.
 
 ---
 
-## 1. Sistem Mimarisi ve Veri Yonetimi
+## Uygulama Görsel Akışı (Visual Workflow)
 
-Proje, **clean architecture** prensiplerine sadik kalarak; veri (Data), arayuz (Screen) ve servis (Service) katmanlarini birbirinden ayirir. Veri kaliciligi, cihaz uzerinde calisan **Hive NoSQL** veritabani ile saglanir. Belgeler, `FolderModel` yapisi altinda klasorlenebilir ve opsiyonel olarak sifrelenmis (Secure Box) sekilde saklanabilir.
+Aşağıda, bir belgenin sisteme girişinden dijital çıktıya dönüşmesine kadar geçen süreç adım adım gösterilmiştir.
 
+### Girdi ve Arayüz
 <div align="center">
-  <img src="assets/screenshots/screen_01.jpg" width="300" alt="Ana Ekran ve Klasor Yapisi" />
+  <img src="assets/screenshots/screen_01.jpg" width="300" alt="Dashboard" />
+  <p><em>Ana Kontrol Paneli ve Klasör Yapısı</em></p>
+  <br>
+  <img src="assets/screenshots/ostim_belge_crop.png" width="450" alt="Process Input" />
+  <p><em>İşlenecek Ham Belge Örneği</em></p>
 </div>
 
----
-
-## 2. Dijitalleştirme Pipeline'ı (Teknik Akış)
-
-Sistem, kullanıcı odaklı bir akış izler. Kullanıcı, yapay zekanın sonuçlarını adım adım denetleyebilir.
-
-### **Girdi: İşlenecek Örnek Belge**
-Sisteme giren ham görüntü. (Örnek: `ostim_belge_crop.png`)
-
+### İşlem Adımları
 <div align="center">
-  <img src="assets/screenshots/ostim_belge_crop.png" width="450" alt="Ham Girdi" />
-</div>
+  <h3>ADIM 1: Manuel Onay (Manual Adjustment)</h3>
+  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Manual Adjust" />
+  <p><em>AI ve OpenCV tarafından bulunan köşelerin kullanıcı tarafından doğrulanması.</em></p>
+  <br>
 
-### ADIM 1: Manuel Onay ve Köşe Düzenleme (Manual Corner Adjustment)
-Kamera çekimi sonrası (`camera_screen`), elde edilen görüntü ve AI tarafından tahmin edilen 4 köşe noktası (`List<Offset>`) kullanıcıya sunulur. Algoritma %100 her zaman doğru çalışmayabilir; bu yüzden **CropScreen** arayüzünde kullanıcıya "Drag Handles" (Sürüklenebilir Tutamaçlar) sunulur. Kullanıcı, belgenin köşelerini parmağıyla tam oturtarak geometrik hatayı sıfıra indirir. Bu, sistemin en kritik "insan onayı" katmanıdır.
-
-<div align="center">
-  <img src="assets/screenshots/screen_edit.png" width="300" alt="Manual Corner Adjustment" />
-</div>
-
-### ADIM 2: Klasör ve Belge Yönetimi (Folder Management)
-Dijitalleşen belgeler, `FolderScreen` yapısında yönetilir. Kullanıcılar, belgelerini "Fatura", "Kimlik" veya "Ders Notu" gibi kendi oluşturdukları klasörler altında gruplayabilir. Hive veritabanı sayesinde binlerce belge arasında hızlıca listeleme yapılır. Ayrıca hassas belgeler için şifreli giriş özelliği bulunur.
-
-<div align="center">
+  <h3>ADIM 2: Kategori Yönetimi</h3>
   <img src="assets/screenshots/screen_02.jpg" width="300" alt="Folder Management" />
-</div>
+  <p><em>Belgelerin sınıflandırılması ve meta veri yönetimi.</em></p>
+  <br>
 
-### ADIM 3: Yapay Zeka ile Kenar Regresyonu (Coordinate Regression)
-VeloxDoc, belge tespiti için Segmentation (Piksel boyama) yerine, çok daha hızlı ve hedef odaklı olan **Coordinate Regression** (Koordinat Tahmini) yöntemini kullanır.
+  <h3>ADIM 3: AI İşleme (Regresyon)</h3>
+  <img src="assets/screenshots/screen_03.jpg" width="300" alt="AI Processing" />
+  <p><em>Arka planda çalışan TFLite modelinin belgeyi algıladığı an.</em></p>
+  <br>
 
-*   **Model:** `scan_model_pro.tflite`
-*   **Girdi:** 224x224 RGB Görüntü.
-*   **Çıktı:** [x1, y1, x2, y2, x3, y3, x4, y4] (8 parametreli vektör).
+  <h3>ADIM 4: Rektifikasyon ve Düzenleme</h3>
+  <img src="assets/screenshots/screen_edit.png" width="300" alt="Edit Screen" />
+  <p><em>Homografi matrisi ile düzleştirilmiş belge ve düzenleme araçları.</em></p>
+  <br>
 
-Model, görüntüyü analiz eder ve doğrudan belgenin 4 köşesini tahmin eder. Eğer TFLite modeli başarısız olursa veya confiency düşükse, sistem otomatik olarak **OpenCV Canny Edge Detection + FindContours** algoritmasına ("Fallback Mechanism") geçer.
-
-<div align="center">
-  <img src="assets/screenshots/screen_03.jpg" width="300" alt="AI Regression" />
-</div>
-
-### ADIM 4: Geometrik Rektifikasyon (Perspective Warp)
-Kullanıcının doğruladığı 4 nokta (Kaynak) ve hedef dikdörtgen boyutları kullanılarak **Homografi Matrisi (3x3)** hesaplanır. OpenCV'nin `warpPerspective` fonksiyonu, bu matrisi kullanarak görüntüyü "kuş bakışı" görünüme dönüştürür. Açılı çekilen fotoğraflar bu adımda düzleştirilir.
-
-<div align="center">
-  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspective Warp" />
-</div>
-
-### ADIM 5: Sonuç ve Paylaşım
-İşlenen belge, nihai olarak görüntülenir. Kullanıcı buradan PDF çıktısı alabilir veya belgeyi galeriye kaydedebilir.
-
-<div align="center">
+  <h3>ADIM 5: Final Sonuç</h3>
   <img src="assets/screenshots/screen_05.jpg" width="300" alt="Final Result" />
+  <p><em>İyileştirilmiş kontrast ve OCR'a hazır dijital çıktı.</em></p>
 </div>
 
 ---
