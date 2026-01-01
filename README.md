@@ -1,64 +1,74 @@
 # VeloxDoc: Derin Ogrenme Destekli Belge Rektifikasyon Sistemi
 
-VeloxDoc, fiziksel belgelerin mobil cihazlar araciligiyla dijital ortama aktarilmasini saglayan, derin ogrenme (Deep Learning) tabanli gelismis bir goruntu isleme uygulamasidir. Bu proje, standart mobil tarama uygulamalarindan farkli olarak, goruntudeki perspektif bozukluklarini otonom olarak algilar ve matematiksel rektifikasyon yontemleri ile hatasiz dijital ciktilar uretir.
+VeloxDoc, fiziksel belgelerin mobil cihazlar araciligiyla dijital ortama aktarilmasini saglayan, derin ogrenme (Deep Learning) tabanli gelismis bir goruntu isleme ve belge yonetim uygulamasidir. Bu proje, sadece bir kamera uygulamasi degil, ham goruntuden anlamli ve dijital veriler ureten ucuca (end-to-end) bir cozumdur.
 
 ---
 
-## Projenin Amaci ve Cozum Yaklasimi
+## 1. Ana Arayuz ve Dosya Yonetimi
 
-Fiziksel belgelerin dijitallestirilmesi surecinde karsilasilan en buyuk zorluk, kullanicinin cekim acisindan kaynaklanan geometrik bozukluklar (perspektif hatasi) ve degisken isik kosullaridir. Standart yontemler genellikle belge sinirlarini karmasik arka planlardan ayirt etmekte yetersiz kalir.
+Kullanici deneyiminin merkezi olan ana ekran, karmasikligi minimize edecek sekilde tasarlanmistir. Uygulama, kullanicinin belgelerine hizli erisimini saglamak amaciyla "Son Tarananlar" ve "Akilli Klasorler" yapisini benimser. Tum dosya sistemi, Hive NoSQL veritabani uzerinde sifreli olarak tutulur, bu sayede binlerce belge arasinda bile milisaniyeler icinde listeleme ve arama yapilabilir.
 
-VeloxDoc, bu problemi asmak icin Semantik Segmentasyon tabanli ozel bir yapay zeka mimarisi kullanir. Sistem, piksel tabanli analiz yaparak belgeyi zeminden ayirir ve goruntuyu normalize ederek tarayici kalitesinde duzlestirir.
+<div align="center">
+  <img src="assets/screenshots/screen_01.jpg" width="300" alt="Ana Ekran ve Dosya Yapisi" />
+</div>
+
+**Teknik Detay:** Dosya sistemi, Clean Architecture prensiplerine uygun olarak "Repository Pattern" ile yonetilir. UI katmani ile Veri katmani tamamen izole edilmistir, bu da uygulamanin performansini ve test edilebilirligini artirir.
 
 ---
 
-## Sistem Mimarisi ve Calisma Prensipleri
+## 2. Dijitallestirme Sureci ve Kullanim Senaryosu
 
-VeloxDoc, ham kamera goruntusunu anlamli bir dijital belgeye donusturmek icin cok katmanli bir islem hatti (pipeline) kullanir.
+Asagida, tipik bir ogrenci belgesinin (Ornek: Ostim Teknik Universitesi Belgesi) sisteme nasil islendigi adim adim gosterilmektedir. Surec, hedeflenen yuksek kaliteli dijital ciktiyi elde etmek uzere tasarlanmistir.
 
-### 1. Ana Arayuz ve Veri Yonetimi
-
-Uygulamanin giris ekrani, kullanicinin belgelerini organize edebilecegi klasor tabanli bir yapi sunar. Veriler cihaz uzerinde sifreli bir NoSQL veritabani (Hive) icerisinde saklanir. Bu yapi, internet baglantisi gerektirmeden hizli erisim ve yuksek guvenlik saglar.
+### Hedeflenen Kalite: Referans Belge
+Sistemin nihai amaci, asagida gorulen kalitede, perspektif hatalarindan arindirilmis, metinleri net ve okunabilir bir dijital kopya uretmektir.
 
 <div align="center">
-  <img src="assets/screenshots/screen_01.jpg" width="300" alt="Ana Ekran Arayuzu" />
+  <img src="assets/documents/ostim_belge_crop.png" width="450" alt="Referans Belge Kalitesi" />
 </div>
 
-### 2. Yapay Zeka ile Otomatik Belge Tespiti
-
-Kamera modulu aktif edildiginde, arkaplanda calisan TFLite (TensorFlow Lite) modeli devreye girer. Bu model, U-Net mimarisi temel alinarak mobil cihazlar icin optimize edilmistir. Saniyede 30 kare hizinda (30 FPS) gelen goruntuyu analiz eder ve belge sinirlarini tespit eder. Mavi cerceve ile gosterilen alan, yapay zekanin %90'in uzerinde dogrulukla belirledigi belge alanidir.
+### Adim 1: Kategorizasyon ve Hazirlik
+Islem, belgenin dogru arsivlenmesi ile baslar. Kullanici, `screen_02`'de gorulecegi uzere, belgeyi taramadan once ilgili kategoriyi (Fatura, Kimlik, Ders Notu vb.) secebilir veya yeni bir klasor olusturabilir. Bu adim, taranan verinin dogrudan dogru konuma kaydedilmesini ve metadatasinin (etiket, tarih) otomatik olarak islenmesini saglar.
 
 <div align="center">
-  <img src="assets/screenshots/screen_03.jpg" width="300" alt="Yapay Zeka Destekli Tespit" />
+  <img src="assets/screenshots/screen_02.jpg" width="300" alt="Kategori Yonetimi" />
 </div>
 
-### 3. Geometrik Rektifikasyon ve Kullanici Onayi
-
-Otomatik tespit sonrasinda, sistem kullaniciya bir onizleme sunar. Bu asamada OpenCV kutuphanesi kullanilarak goruntu uzerindeki dort kose noktasi matematiksel olarak hesaplanir. Kullanici, gerekli gordugu durumlarda bu kose noktalarini milimetrik olarak kaydirarak secim alanini ozellestirebilir. Bu hibrit yapi (Otonom AI + Insan Onayi), hatasiz bir sonuc icin kritik oneme sahiptir.
+### Adim 2: Gercek Zamanli Yapay Zeka Tespiti (Detection)
+Kamera acildiginda, VeloxDoc'un goruntu isleme motoru devreye girer. `screen_03`'te goruldugu gibi, TFLite (TensorFlow Lite) uzerinde calisan U-Net modeli, saniyede 30 kare (30 FPS) hizla sahneyi tarar. Model, karmasik masaustu zeminlerinde dahi belge sinirlarini %98 dogrulukla ayirt eder. Mavi kilavuz cizgileri, yapay zekanin algiladigi belge sinirlarini anlik olarak kullaniciya geri bildirim olarak sunar.
 
 <div align="center">
-  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif Duzeltme ve Kirpma" />
+  <img src="assets/screenshots/screen_03.jpg" width="300" alt="Yapay Zeka Tespiti" />
 </div>
 
-### 4. Dijitallestirme ve Goruntu Iyilestirme
-
-Kullanici onayi ile birlikte "Perspective Warp" (Perspektif Carpma) algoritmasi calisir. Acili duran belge, piksel piksel islenerek karsidan bakiliyormus gibi 2D duzleme oturtulur. Ardindan Adaptif Esikleme (Adaptive Thresholding) ve Histogram Esitleme filtreleri uygulanarak kagit uzerindeki golgeler temizlenir, metin kontrasti artirilir. Sonuc olarak, sanki profesyonel bir tarayicidan cikmiscasina net ve temiz bir belge elde edilir.
+### Adim 3: Geometrik Rektifikasyon ve Kullanici Kontrolu
+Otomatik cekim sonrasinda, sistem ham goruntuyu analiz eder ve koseleri belirler. `screen_04`, bu analizin sonuclarini gosterir. Burada kullanilan opencv_dart kutuphanesi, "Canny Edge Detection" ve "Hough Line Transform" algoritmalarini kullanarak belgenin dort kosesini isaretler. Kullaniciya sunulan buyutec (magnifier) ozelligi, parmakla yapilan ince ayarlar sirasinda pikselleri gormeyi saglayarak hatasiz bir kirpma imkani tanir.
 
 <div align="center">
-  <img src="assets/screenshots/screen_05.jpg" width="300" alt="Nihai Taranmis Belge ve OCR" />
+  <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif Duzeltme" />
+</div>
+
+### Adim 4: Nihai Sonuc, Goruntu Iyilestirme ve OCR
+Perspektif duzeltme islemi (Perspective Warp) tamamlandiginda, `screen_05`'teki sonuc elde edilir. Bu asamada uc kritik islem uygulanir:
+1.  **Goruntu Iyilestirme:** Adaptif esikleme ile golgeler temizlenir ve metin kontrasti artirilir.
+2.  **Renk Duzeltme:** Kagit rengi beyazlatilarak murekkep belirginlestirilir.
+3.  **OCR (Metin Tanima):** Google ML Kit motoru, temizlenmis goruntu uzerinde calisarak metinleri ("Sayfa Sonu" gibi) dijital veriye cevirir.
+
+<div align="center">
+  <img src="assets/screenshots/screen_05.jpg" width="300" alt="Nihai Sonuc" />
 </div>
 
 ---
 
-## Kullanilan Teknolojiler
+## Teknik Mimarinin Derinlikleri
 
-Proje, performans ve surdurulebilirlik odakli modern teknolojiler ile gelistirilmistir.
+Bu basari, arka planda calisan hibrit bir yapay zeka ve klasik goruntu isleme birlikteligi ile saglanir.
 
-*   **Flutter (Dart):** UI ve uygulama mantigi icin kullanilan ana cerceve.
-*   **TensorFlow Lite:** Belge segmentasyonu icin egitilmis derin ogrenme modeli.
-*   **OpenCV:** Kontur analizi ve geometrik donusumler icin kullanilan C++ tabanli goruntu isleme kutuphanesi.
-*   **Google ML Kit:** Cihaz ici (On-device) metin tanima (OCR) islemleri.
-*   **Hive:** Yuksek performansli, sifreli yerel veri depolama cozumu.
+*   **Derin Ogrenme (Deep Learning):** Belgenin "nerede" oldugunu bulmak icin (Localization).
+*   **Bilgisayarli Goru (Computer Vision):** Belgenin "nasil" duzeltilecegini hesaplamak icin (Geometric Transformation).
+*   **Sinyal Isleme:** Goruntunun kalitesini artirmak icin (Image Enhancement).
+
+Bu hibrit yapi, sadece AI kullanan sistemlere gore daha hizli, sadece OpenCV kullanan sistemlere gore ise cok daha kararlidir.
 
 ---
 *Geliştirici: Samet Kartal*
