@@ -11,8 +11,6 @@ VeloxDoc, modern ve güçlü bir mobil belge tarama uygulamasıdır. Flutter ile
 ## Ekran Görüntüleri
 
 <div align="center">
-  <img src="assets/screenshots/promo_comparison.png" width="600" alt="Tarama Öncesi ve Sonrası" />
-  <br><br>
   <img src="assets/screenshots/screen_edit.png" width="300" alt="Düzenleme Ekranı" />
   <img src="assets/documents/ostim_belge_crop.png" width="300" alt="Taranmış Belge" />
   <img src="assets/screenshots/screen_01.jpg" width="200" alt="Ekran 1" />
