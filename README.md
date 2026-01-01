@@ -58,13 +58,13 @@ Yapay zeka tarafindan uretilen Binary Maske, belgenin kabaca nerede oldugunu soy
   <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif Duzeltme" />
 </div>
 
-### ADIM 4: Tahribatsız Düzenleme ve Filtreleme (Non-Destructive Editing)
-Dijitalleştirme işlemi sadece bir "anlık görüntü" değildir; kullanıcı belge üzerinde sonradan düzenlemeler yapabilmelidir. VeloxDoc, orijinal görüntü verisini değiştirmeden çalışan **Katmanlı (Layered) Mimari** kullanır.
+### ADIM 4: Manuel Onay ve Hassas Düzenleme (Manual Adjustment)
+Yapay zeka %98 oranında doğru tespit yapsa da, son kontrol her zaman kullanıcıdadır. Kamera çekimi sonrası, tespit edilen köşe noktaları ekranda kullanıcıya sunulur. Eğer sistem belgenin bir köşesini yanlış algıladıysa (örn. masadaki başka bir nesneye takıldıysa), kullanıcı bu adımda müdahale edebilir.
 
-Flutter'ın `CustomPainter` motoru üzerine inşa edilen bu sanal kanvas katmanı, kullanıcının belge üzerine çizim yapmasını, not almasını veya filtre (Siyah/Beyaz, Magic Color) uygulamasını sağlar. Bu işlemler orijinal veriyi bozmaz (Non-Destructive); kullanıcı dilediği zaman tüm çizimleri geri alabilir veya filtreyi değiştirebilir.
+Kullanıcı, köşe noktalarını sürüklerken devreye giren **Büyüteç (Magnifier)** özelliği sayesinde pikselleri yakından görür ve mikroskobik hassasiyette düzeltme yapabilir. Bu aşama, çıktının geometrik olarak kusursuz olmasını garanti eden "İnsan-Makine İşbirliği" katmanıdır. Onay verildiği anda perspektif düzeltme (Warp) işlemi uygulanır.
 
 <div align="center">
-  <img src="assets/screenshots/screen_edit.png" width="300" alt="Non-Destructive Editing" />
+  <img src="assets/screenshots/screen_edit.png" width="300" alt="Manual Edge Adjustment" />
 </div>
 
 ### ADIM 5: Kontrast Iyilestirme ve OCR (Final Sonuç)
