@@ -18,18 +18,25 @@ Veri kaliciligi icin cihaz uzerinde calisan, yuksek performansli ve sifreli bir 
 
 ---
 
-## 2. Kategorizasyon ve Metadata Isleme
+## 2. Dijitallestirme Sureci ve Algoritmik Pipeline
 
+Sistem, ham kameradan alinan goruntuyu (Raw Input) yuksek kaliteli bir dijital belgeye donusturmek icin 4 kritik asamadan olusan bir pipeline kullanir.
+
+### **İşlenecek Örnek Belge (Sample Document)**
+Aşağıdaki görsel, sistemin işleme kapasitesini göstermek adına referans olarak kullanılan örnek bir öğrenci belgesidir. Sistem, bu belgeyi karmaşık zeminlerden ayırarak dijitalleştirecektir.
+
+<div align="center">
+  <img src="assets/screenshots/ostim_belge_crop.png" width="450" alt="İşlenecek Örnek Belge" />
+</div>
+
+### ADIM 1: Kategorizasyon ve Metadata Isleme
 Dijitallestirme sureci, verinin dogru siniflandirilmasi ile baslar. Ham goruntu islenmeden once, kullanici tarafindan veya otomatik olarak kategorize edilir. Bu adim, goruntu isleme hattindan cikacak olan sonucun hangi formatta (Siyah-Beyaz, Gri Tonlama veya Renkli) saklanacagina dair ipuclari tasir. Ornegin bir "Kimlik Karti" icin renk dogrulugu kritikken, bir "Ders Notu" icin yuksek kontrast ve siyah-beyaz ayrimi daha onemlidir. Sistem, secilen kategoriye gore post-processing (son isleme) parametrelerini dinamik olarak ayarlar.
 
 <div align="center">
   <img src="assets/screenshots/screen_02.jpg" width="300" alt="Kategorizasyon" />
 </div>
 
----
-
-## 3. Yapay Zeka ile Otonom Belge Tespiti (AI Segmentation)
-
+### ADIM 2: Yapay Zeka ile Otonom Belge Tespiti (AI Segmentation)
 VeloxDoc'un en kritik bilesenlerinden biri, ham kamera goruntusu uzerindeki belgeyi zemin (masa, hali vb.) uzerinden ayirt eden yapay zeka moduludur. Geleneksel yontemler (Canny Edge Detection gibi), goruntu uzerindeki tum keskin kenarlari tespit ettigi icin, karmasik zeminlerde (ornegin ahsap desenli masa veya karisik kablolar) basarisiz olur.
 
 VeloxDoc, bu problemi asmak icin **Semantik Segmentasyon (Semantic Segmentation)** yontemini kullanir. Ozel olarak egitilmis hafifletilmis bir **U-Net** modeli (MobileNetV2 backbone ile), 256x256 cozunurlugune indirgenmis kamera goruntusunu girdi olarak alir. Model, goruntudeki her bir pikseli "Belge" veya "Arkaplan" olarak siniflandirir.
@@ -40,14 +47,11 @@ Bu islem sonucunda bir **Olasilik Haritasi (Probability Map)** uretilir. Bu hari
   <img src="assets/screenshots/screen_03.jpg" width="300" alt="Yapay Zeka Segmentasyonu" />
 </div>
 
----
-
-## 4. Geometrik Rektifikasyon ve Perspektif Duzeltme
-
+### ADIM 3: Geometrik Rektifikasyon ve Perspektif Duzeltme
 Yapay zeka tarafindan uretilen Binary Maske, belgenin kabaca nerede oldugunu soyler ancak geometrik duzeltme icin kesin kose koordinatlarina ihtiyac vardir. Bu asamada **OpenCV** kutuphanesi devreye girer.
 
 1.  **Kontur Analizi (Contour Finding):** Maske uzerindeki en dis sinirlar (External Contours) taranir.
-2.  **Cokgen Yaklasimi (ApproxPolyDP):** Tespit edilen konturlar genellikle pruzlu kenarlara sahiptir. **Douglas-Peucker Algoritmasi** kullanilarak, bu karmasik sekiller daha az koseye sahip cokgenlere indirgenir. Algoritma, dort koseye sahip en buyuk alani "Belge Dortgeni" olarak kabul eder.
+2.  **Cokgen Yaklasimi (ApproxPolyDP):** Tespit edilen konturlar genellikle pruzlu kenarlara sahiptir. **Douglas-Peucker Algoritmasi** kullanilarak, bu karmaşık şekiller daha az köseye sahip cokgenlere indirgenir. Algoritma, dort koseye sahip en buyuk alani "Belge Dortgeni" olarak kabul eder.
 3.  **Homografi Matrisi (Homography Transformation):** Tespit edilen 4 nokta (Kaynak) ile hedefledigimiz duz dikdortgen (Hedef) arasindaki iliskiyi kuran 3x3'luk bir donusum matrisi hesaplanir.
 4.  **Warping:** Bu matris kullanilarak, goruntunun her bir pikseli yeniden haritalandirilir (Remapping). Sonuc olarak, acili ve perspektif hatasi iceren goruntu, sanki tam tepeden (90 derece aciyla) cekilmis gibi duzlestirilir.
 
@@ -55,19 +59,12 @@ Yapay zeka tarafindan uretilen Binary Maske, belgenin kabaca nerede oldugunu soy
   <img src="assets/screenshots/screen_04.jpg" width="300" alt="Perspektif ve Homografi" />
 </div>
 
----
-
-## 5. Kontrast Iyilestirme ve Goruntu Zenginlestirme (Post-Processing)
-
+### ADIM 4: Kontrast Iyilestirme ve Goruntu Zenginlestirme (Post-Processing)
 Geometrik olarak duzeltilmis goruntu, henuz dijital bir belge kalitesinde degildir; uzerinde farkli isik kosullarindan kaynaklanan golgeler ve renk sapmalari bulunur. VeloxDoc, bu goruntuyu "tarayici ciktisi" standardina getirmek icin gelismis bir sinyal isleme hatti uygular.
 
-### Adaptif Esikleme (Adaptive Thresholding)
-Standart esikleme (Global Thresholding) tum goruntu icin tek bir isik degeri kullanir, bu da golgeli alanlarin tamamen siyah cikmasina neden olur. VeloxDoc ise **Adaptif Esikleme** kullanir. Goruntu kucuk bloklara bolunur ve her blok icin komsu piksellerin ortalamasina gore dinamik bir esik degeri hesaplanir. Bu sayede, kağıdın bir kosesi karanlikta kalsa bile, oradaki metinler basariyla arka plandan ayristirilir.
-
-### Histogram Esitleme ve Gürültü Giderme
-Goruntunun histogrami analiz edilerek en koyu (murekkep) ve en acik (kagit) noktalar arasindaki mesafe genisletilir (Contrast Stretching). Ayrica, **Gaussian Blur** ve **Median Filter** gibi tekniklerle sensor gurultuleri (Noise) temizlenir.
-
-Sonuc olarak elde edilen goruntu, **Google ML Kit OCR** motoruna beslenir ve uzerindeki metinler yuksek dogrulukla dijital veriye donusturulur.
+*   **Adaptif Esikleme (Adaptive Thresholding):** Standart esikleme (Global Thresholding) tum goruntu icin tek bir isik degeri kullanir, bu da golgeli alanlarin tamamen siyah cikmasina neden olur. VeloxDoc ise **Adaptif Esikleme** kullanir. Goruntu kucuk bloklara bolunur ve her blok icin komsu piksellerin ortalamasina gore dinamik bir esik degeri hesaplanir. Bu sayede, kağıdın bir kosesi karanlikta kalsa bile, oradaki metinler basariyla arka plandan ayristirilir.
+*   **Histogram Esitleme:** Goruntunun histogrami analiz edilerek en koyu (murekkep) ve en acik (kagit) noktalar arasindaki mesafe genisletilir (Contrast Stretching).
+*   **OCR:** Google ML Kit OCR motoruna beslenerek metinler dijital veriye donusturulur.
 
 <div align="center">
   <img src="assets/screenshots/screen_05.jpg" width="300" alt="Final Sonuc ve OCR" />
