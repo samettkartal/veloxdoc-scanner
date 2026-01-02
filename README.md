@@ -97,35 +97,54 @@ Neden tek bir yöntem yerine hibrit bir yapı kullanıldı?
 
 ### Görsel Pipeline Analizi
 
-Aşağıdaki tablo, VeloxDoc motorunun bir belge karesini işlerken geçtiği gerçek aşamaları göstermektedir:
+### Görsel Pipeline Analizi
+VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik detaylar:
 
 <table>
   <tr>
-    <td align="center" width="33%">
-        <img src="assets/pipeline/step_01.png" width="100%" alt="Adım 01" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 1: Giriş & Gri Ölçek</strong><br>Ham görüntü alınır ve tek kanala (Gri) indirgenir.</sub>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 1: Optimizasyon ve Giriş</h4>
+        <img src="assets/pipeline/step_01.png" width="100%" alt="Adım 01" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Veri Optimizasyonu ve Boyutlandırma:</strong> Mobil cihazlardan alınan yüksek çözünürlüklü kamera verilerinin doğrudan sinir ağlarına beslenmesi, yüksek işlem maliyeti ve gecikmeye (latency) neden olur. Bu darboğazı aşmak ve gerçek zamanlı işlem performansı sağlamak amacıyla, giriş görüntüsü modelin mimari gereksinimi olan 256x256 piksel boyutuna indirgenir (Downsampling).</p>
+        <p><strong>Veri Normalizasyonu:</strong> Modelin matematiksel yakınsamasını (convergence) hızlandırmak ve aydınlatma farklarından kaynaklanan varyasyonları minimize etmek amacıyla piksel değerlerine normalizasyon uygulanır. RGB kanallarındaki yoğunluk değerleri, standart 0-255 tamsayı aralığından 0.0 - 1.0 kayan noktalı sayı (floating point) aralığına ölçeklenerek modelin kararlılığı artırılır.</p>
     </td>
-    <td align="center" width="33%">
-        <img src="assets/pipeline/step_02.png" width="100%" alt="Adım 02" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 2: Gürültü Azaltma</strong><br>Gaussian Blur ile grenler temizlenir.</sub>
-    </td>
-    <td align="center" width="33%">
-        <img src="assets/pipeline/step_03.png" width="100%" alt="Adım 03" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 3: Kenar Tespiti (Canny)</strong><br>Sert geçişler ve gradyanlar yakalanır.</sub>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 2: Model Tahmini</h4>
+        <img src="assets/pipeline/step_02.png" width="100%" alt="Adım 02" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Model Mimarisi ve Yöntem:</strong> Belge sınırlarının tespiti için mobil işlemcilerde (CPU/NPU) düşük gecikmeyle çalışmak üzere optimize edilmiş, hafifletilmiş bir U-Net (TFLite) mimarisi kullanılmaktadır. Klasik nesne tespitinden (bounding box) farklı olarak Semantik Segmentasyon yöntemi uygulanır; bu sayede görüntü piksel bazında sınıflandırılarak (pixel-wise classification) en hassas geometrik sınırlar elde edilir.</p>
+        <p><strong>Model Çıktısı (Olasılık Haritası):</strong> Modelin çıktısı, giriş görüntüsüyle (256x256) aynı uzamsal boyuta sahip bir Olasılık Haritası (Probability Map)'dır. Matris üzerindeki her bir değer, ilgili pikselin "belge" olma ihtimalini temsil eder. Yüksek olasılıklı pikseller (beyaz) ile düşük olasılıklı pikseller (siyah) arasındaki kontrast, nihai İkili Maskeyi (Binary Mask) oluşturur.</p>
     </td>
   </tr>
   <tr>
-    <td align="center">
-        <img src="assets/pipeline/step_04.png" width="100%" alt="Adım 04" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 4: Kontur Çıkarımı</strong><br>Kapalı döngüler ve geometrik şekiller bulunur.</sub>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 3: Maske ve Kontur</h4>
+        <img src="assets/pipeline/step_03.png" width="100%" alt="Adım 03" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Maske İşleme ve Kontur Tespiti:</strong> AI modelinden elde edilen olasılık haritası, bir eşik değeri (threshold) uygulanarak kesin bir ikili maskeye (binary mask) dönüştürülür. Bu maske üzerinde OpenCV kütüphanesinin topolojik yapı analizi algoritmaları (findContours) kullanılarak, gürültüden arındırılmış en dış nesne sınırları (external contours) tespit edilir.</p>
+        <p><strong>Çokgen İndirgeme ve Köşe Seçimi:</strong> Tespit edilen ham konturlar genellikle pürüzlü kenarlara sahiptir. Douglas-Peucker algoritmasını kullanan <code>approxPolyDP</code> fonksiyonu ile bu karmaşık şekiller, kenar sayısı azaltılarak daha basit çokgenlere indirgenir. Algoritma, filtreleme kriteri olarak alanı en büyük olan ve tam olarak 4 köşe noktasına sahip geometrik şekli "belge" olarak izole eder.</p>
     </td>
-    <td align="center">
-        <img src="assets/pipeline/step_05.png" width="100%" alt="Adım 05" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 5: Köşe Yaklaştırma</strong><br>PolyDP algoritması ile şekil 4 köşeye indirgenir.</sub>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 4: Koordinat İşleme</h4>
+        <img src="assets/pipeline/step_04.png" width="100%" alt="Adım 04" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Köşe Noktalarının Sıralanması:</strong> Yapay zeka 4 köşe noktasını bulur ancak bunların hangisinin "Sol-Üst" veya "Sağ-Alt" olduğunu bilmez. Perspektif düzeltmenin hatasız çalışması için, bu noktalar bir algoritma yardımıyla saat yönüne (Sol-Üst'ten başlayarak) doğru sıraya dizilir.</p>
+        <p><strong>Koordinat Ölçekleme (Upscaling):</strong> Hız kazanmak için tespit işlemini küçük (256 piksel) görüntüde yaptık. Ancak net bir çıktı almak için bu noktaları orijinal, büyük fotoğrafa (örn. 4000 piksel) uyarlamamız gerekir. Bulunan koordinatlar, basit bir matematiksel oranla (Scale Factor) çarpılarak orijinal görüntü üzerindeki gerçek yerlerine taşınır.</p>
     </td>
-    <td align="center">
-        <img src="assets/pipeline/step_06.png" width="100%" alt="Adım 06" style="border-radius: 8px; border: 1px solid #333;" />
-        <br><sub><strong>Aşama 6: Perspektif Dönüşümü</strong><br>Homografi ile belge kuş bakışı hizalanır.</sub>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 5: Homografi Hesabı</h4>
+        <img src="assets/pipeline/step_05.png" width="100%" alt="Adım 05" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Homografi Matrisi ve Geometrik Eşleme:</strong> Yamuk perspektife sahip belgeyi düz bir düzleme oturtmak için, kaynak görüntüdeki koordinatlar (Source Points) ile hedeflenen ideal dikdörtgen (Destination Points) arasında matematiksel bir ilişki kurulmalıdır. OpenCV’nin <code>getPerspectiveTransform</code> algoritması, bu iki düzlem arasındaki geçişi sağlayan ve geometrik dönüşümü tanımlayan 3x3’lük Homografi Matrisini hesaplar.</p>
+    </td>
+    <td width="50%" valign="top">
+        <h4 align="center">ADIM 6: Perspektif Düzeltme</h4>
+        <img src="assets/pipeline/step_06.png" width="100%" alt="Adım 06" style="border-radius: 8px; border: 1px solid #FFB6C1;" />
+        <br>
+        <p><strong>Perspektif Çarpıtma (Warping) ve Rektifikasyon:</strong> Hesaplanan matris, <code>warpPerspective</code> fonksiyonu aracılığıyla görüntüye uygulanır. Bu işlem görüntüyü sadece döndürmez; pikselleri uzayda bükerek (warping) perspektif kaçış noktalarını düzeltir. Sonuç olarak, açılı ve derinlikli çekilmiş fotoğraf, geometrik hatalardan arındırılarak sanki tam tepeden taranmış gibi kuş bakışı (bird's-eye view) bir forma kavuşturulur.</p>
     </td>
   </tr>
 </table>
@@ -138,41 +157,41 @@ Aşağıdaki tablo, VeloxDoc motorunun bir belge karesini işlerken geçtiği ge
   <tr>
     <td align="center" width="33%">
         <h3>1. Dashboard & Kasa</h3>
-        <img src="assets/screenshots/screen_01.jpg" width="250" alt="Ana Ekran" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <img src="assets/screenshots/screen_01.jpg" width="250" alt="Dashboard" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>Güvenli klasör yönetimi ve hızlı erişim.</em></p>
+        <p><em><strong>Merkezi Doküman Yönetimi:</strong> Özelleştirilebilir kategoriler (Fatura, Sözleşme vb.) ve akıllı dosyalama sistemi ile dijital arşivinize bütünleşik bir bakış sunan ana yönetim paneli.</em></p>
     </td>
     <td align="center" width="33%">
-        <h3>2. Akıllı Tarama</h3>
-        <img src="assets/screenshots/screen_03.jpg" width="250" alt="Tarama Ekranı" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <h3>2. Rektifikasyon</h3>
+        <img src="assets/screenshots/screen_04.jpg" width="250" alt="Rektifikasyon" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>AI destekli gerçek zamanlı belge algılama.</em></p>
+        <p><em><strong>Hassas Geometrik Düzeltme:</strong> Yapay zeka tabanlı köşe tespit algoritmasının sonuçlarını denetleyebileceğiniz, milimetrik hassasiyette (pixel-perfect) kırpma ve perspektif ayarlama arayüzü.</em></p>
     </td>
     <td align="center" width="33%">
-        <h3>3. Manuel Hassas Ayar</h3>
-        <img src="assets/screenshots/screen_04.jpg" width="250" alt="Kırpma Ekranı" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <h3>3. Meta Veri & Kayıt</h3>
+        <img src="assets/screenshots/screen_edit.png" width="250" alt="Main Edit" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>Otomatik algılama sonrası ince ayar imkanı.</em></p>
+        <p><em><strong>Gelişmiş Editör ve OCR:</strong> Görüntü işleme, metin tanıma (OCR) ve format dönüştürme gibi post-prodüksiyon araçlarının yönetildiği, belgenin dijitalleşme sürecindeki komuta merkezi.</em></p>
     </td>
   </tr>
   <tr>
     <td align="center">
-        <h3>4. Rektifikasyon</h3>
-        <img src="assets/screenshots/screen_edit.png" width="250" alt="Düzenlenmiş Belge" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <h3>4. Akıllı Tarama</h3>
+        <img src="assets/screenshots/screen_03.jpg" width="250" alt="Smart Scan" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>Homografi dönüşümü sonrası hizalanmış çıktı.</em></p>
+        <p><em><strong>Dijital Not ve İşaretleme:</strong> Belge üzerinde interaktif düzenleme imkanı sunan; sanal kalem, silgi ve vurgulayıcı (highlighter) gibi zengin araç setine sahip çizim modülü.</em></p>
     </td>
     <td align="center">
-        <h3>5. Meta Veri & Kayıt</h3>
-        <img src="assets/screenshots/screen_02.jpg" width="250" alt="Kayıt Ekranı" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <h3>5. Manuel Hassas Ayar</h3>
+        <img src="assets/screenshots/screen_02.jpg" width="250" alt="Manual Adjust" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>Belgelerin etiketlenmesi ve kategorize edilmesi.</em></p>
+        <p><em><strong>Görüntü Zenginleştirme:</strong> Sepya, Gri Tonlama ve Negatif gibi filtrelerin yanı sıra; parlaklık ve kontrast dengesini optimize ederek belge okunabilirliğini maksimize eden ayar paneli.</em></p>
     </td>
     <td align="center">
         <h3>6. Final Sonuç</h3>
-        <img src="assets/screenshots/screen_05.jpg" width="250" alt="Final Çıktı" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <img src="assets/screenshots/screen_05.jpg" width="250" alt="Final" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
-        <p><em>Yüksek kontrastlı, paylaşılabilir dijital belge.</em></p>
+        <p><em><strong>Yüksek Kaliteli Çıktı:</strong> Optik Karakter Tanıma (OCR) işlemi tamamlanmış, yüksek çözünürlüklü ve anlık paylaşıma hazır profesyonel dijital belge çıktısı.</em></p>
     </td>
   </tr>
 </table>
