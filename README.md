@@ -240,3 +240,4 @@ Bu proje MIT Lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ---
 **Geliştirici:** Samet Kartal
+
