@@ -162,13 +162,13 @@ VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik det
     </td>
     <td align="center" width="33%">
         <h3>2. Rektifikasyon</h3>
-        <img src="assets/screenshots/screen_04.jpg" width="250" alt="Rektifikasyon" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <img src="assets/screenshots/screen_edit.png" width="250" alt="Rektifikasyon" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
         <p><em><strong>Hassas Geometrik Düzeltme:</strong> Yapay zeka tabanlı köşe tespit algoritmasının sonuçlarını denetleyebileceğiniz, milimetrik hassasiyette (pixel-perfect) kırpma ve perspektif ayarlama arayüzü.</em></p>
     </td>
     <td align="center" width="33%">
         <h3>3. Meta Veri & Kayıt</h3>
-        <img src="assets/screenshots/screen_edit.png" width="250" alt="Main Edit" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <img src="assets/screenshots/screen_02.jpg" width="250" alt="Main Edit" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
         <p><em><strong>Gelişmiş Editör ve OCR:</strong> Görüntü işleme, metin tanıma (OCR) ve format dönüştürme gibi post-prodüksiyon araçlarının yönetildiği, belgenin dijitalleşme sürecindeki komuta merkezi.</em></p>
     </td>
@@ -182,7 +182,7 @@ VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik det
     </td>
     <td align="center">
         <h3>5. Manuel Hassas Ayar</h3>
-        <img src="assets/screenshots/screen_02.jpg" width="250" alt="Manual Adjust" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
+        <img src="assets/screenshots/screen_04.jpg" width="250" alt="Manual Adjust" style="border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);" />
         <br><br>
         <p><em><strong>Görüntü Zenginleştirme:</strong> Sepya, Gri Tonlama ve Negatif gibi filtrelerin yanı sıra; parlaklık ve kontrast dengesini optimize ederek belge okunabilirliğini maksimize eden ayar paneli.</em></p>
     </td>
