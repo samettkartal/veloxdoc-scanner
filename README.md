@@ -64,23 +64,23 @@ Sistemin kalbi, milisaniyeler içinde çalışan üç aşamalı bir görüntü i
 
 ```mermaid
 graph TD
-    A[Kamera Akışı (Input Stream)] --> B{AI Model Güven Skoru?}
+    A["Kamera Akışı (Input Stream)"] --> B{"AI Model Güven Skoru?"}
     
     subgraph "Hibrit İşleme Motoru"
-    B -- "Yüksek Güven (>%85)" --> C[TFLite Koordinat Regresyonu]
-    C --> D[4 Köşe Noktası Tahmini]
+    B -- "Yüksek Güven (>%85)" --> C["TFLite Koordinat Regresyonu"]
+    C --> D["4 Köşe Noktası Tahmini"]
     
-    B -- "Düşük Güven (<%85)" --> E[OpenCV Fallback Mekanizması]
-    E --> F[Gri Skala & Gaussian Blur]
-    F --> G[Canny Kenar Tespiti]
-    G --> H[Kontur Analizi & ApproxPolyDP]
+    B -- "Düşük Güven (<%85)" --> E["OpenCV Fallback Mekanizması"]
+    E --> F["Gri Skala & Gaussian Blur"]
+    F --> G["Canny Kenar Tespiti"]
+    G --> H["Kontur Analizi & ApproxPolyDP"]
     H --> D
     end
     
-    D --> I[Homografi Matrisi Hesaplama]
-    I --> J[Warp Perspective Dönüşümü]
-    J --> K[Görüntü İyileştirme (Post-Processing)]
-    K --> L[Dijital Belge Çıktısı]
+    D --> I["Homografi Matrisi Hesaplama"]
+    I --> J["Warp Perspective Dönüşümü"]
+    J --> K["Görüntü İyileştirme (Post-Processing)"]
+    K --> L["Dijital Belge Çıktısı"]
 ```
 
 ### Algoritmik Detaylar & Karşılaştırma
