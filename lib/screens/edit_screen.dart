@@ -179,7 +179,7 @@ class _EditScreenState extends State<EditScreen> {
         return Scaffold(
           backgroundColor: isDarkMode ? Colors.black : Colors.white,
           body: _image == null 
-            ? Center(child: CircularProgressIndicator(color: isDarkMode ? const Color(0xFF547792) : const Color(0xFF547792)))
+            ? Center(child: CircularProgressIndicator(color: isDarkMode ? const Color(0xFF1D546C) : const Color(0xFF1D546C)))
             : Stack(
               children: [
                 // Çizim Alanı
@@ -240,10 +240,10 @@ class _EditScreenState extends State<EditScreen> {
                            ),
                            Text("Düzenle", style: GoogleFonts.outfit(color: isDarkMode ? Colors.white : Colors.black, fontSize: 20)),
                            _isSaving 
-                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Color(0xFF547792)))
+                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Color(0xFF1D546C)))
                            : GestureDetector(
                              onTap: _saveImage,
-                             child: const Icon(Icons.check, color: Color(0xFF547792)),
+                             child: const Icon(Icons.check, color: Color(0xFF1D546C)),
                            ),
                         ],
                       ),
@@ -351,7 +351,7 @@ class _EditScreenState extends State<EditScreen> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF547792) : (isDarkMode ? Colors.white12 : Colors.grey[200]),
+          color: selected ? const Color(0xFF1D546C) : (isDarkMode ? Colors.white12 : Colors.grey[200]),
           borderRadius: BorderRadius.circular(10)
         ),
         child: Column(

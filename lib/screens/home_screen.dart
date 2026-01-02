@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF213448),
+                        backgroundColor: const Color(0xFF1A3D64),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Eski şifre hatalı!")));
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF213448)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A3D64)),
                   child: Text("Kaydet", style: GoogleFonts.inter(color: Colors.white)),
                 )),
               ])
@@ -327,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
                 colors: isDarkMode 
-                  ? [const Color(0xFF2E2E3E), const Color(0xFF1A1A2E)] 
+                  ? [const Color(0xFF0C2B4E), const Color(0xFF1A1A2E)] 
                   : [Colors.white, const Color(0xFFF0F0F0)],
                 begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(24),
@@ -364,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: Text("İptal", style: GoogleFonts.inter(color: isDarkMode ? Colors.white54 : Colors.black54)))),
                  Expanded(child: ElevatedButton(
                    onPressed: onConfirm,
-                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF213448), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A3D64), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                    child: Text("Tamam", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
                  )),
               ]),
@@ -378,12 +378,81 @@ class _HomeScreenState extends State<HomeScreen> {
     final ImagePicker picker = ImagePicker();
     final List<XFile> images = await picker.pickMultiImage();
 
-    if (images.isNotEmpty) {
-      if (!mounted) return;
+    if (images.isEmpty) return;
+
+    List<String> processedImages = [];
+    final isDarkMode = ThemeManager.instance.isDarkMode;
+
+    for (var image in images) {
+      if (!mounted) break;
+
+      // 1. Loading Göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF0C2B4E) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDarkMode ? Colors.white10 : Colors.grey[300]!),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                 CircularProgressIndicator(color: isDarkMode ? const Color(0xFF1D546C) : const Color(0xFF1A3D64)),
+                 const SizedBox(height: 16),
+                 Text(
+                  "Kenarlar Hesaplanıyor...", 
+                  style: GoogleFonts.inter(
+                    color: isDarkMode ? Colors.white : Colors.black, 
+                    fontSize: 14, 
+                    decoration: TextDecoration.none
+                  )
+                )
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // 2. AI Tahmini
+      List<Offset>? corners;
+      try {
+        corners = await _aiService.predictCorners(image.path);
+      } catch (e) {
+        debugPrint("AI Error: $e");
+      }
+      
+      if (!mounted) {
+         Navigator.pop(context); // Dialog kapat
+         break;
+      }
+      Navigator.pop(context); // Dialog kapat
+
+      // 3. Crop Screen
+      final String? croppedPath = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CropScreen(
+            imagePath: image.path,
+            initialCorners: corners,
+            mode: CropMode.perspective,
+          ),
+        ),
+      );
+
+      if (croppedPath != null) {
+        processedImages.add(croppedPath);
+      }
+    }
+
+    if (processedImages.isNotEmpty && mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PdfPreviewScreen(imagePaths: images.map((e) => e.path).toList()),
+          builder: (_) => PdfPreviewScreen(imagePaths: processedImages),
         ),
       );
     }
@@ -396,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, isDarkMode, child) {
         return Scaffold(
           body: Container(
-            color: isDarkMode ? const Color(0xFF213448) : const Color(0xFFEAE0CF),
+            color: isDarkMode ? const Color(0xFF0C2B4E) : const Color(0xFFF4F4F4),
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -413,10 +482,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: GoogleFonts.outfit(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? const Color(0xFFEAE0CF) : const Color(0xFF213448))),
+                                    color: isDarkMode ? const Color(0xFFF4F4F4) : const Color(0xFF1A3D64))),
                             Text("Belgelerinizi yönetin",
                                 style: GoogleFonts.inter(
-                                    color: isDarkMode ? const Color(0xFF94B4C1) : const Color(0xFF547792),
+                                    color: isDarkMode ? const Color(0xFF1D546C) : const Color(0xFF1D546C),
                                     fontSize: 14)),
                           ],
                         ),
@@ -426,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () => ThemeManager.instance.toggleTheme(),
                               icon: Icon(
                                 isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                                color: isDarkMode ? const Color(0xFFEAE0CF) : const Color(0xFF213448),
+                                color: isDarkMode ? const Color(0xFFF4F4F4) : const Color(0xFF1A3D64),
                               ),
                               tooltip: isDarkMode ? "Aydınlık Mod" : "Karanlık Mod",
                             ),
@@ -434,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: _createFolder,
                               icon: Icon(
                                 Icons.create_new_folder_outlined,
-                                color: isDarkMode ? const Color(0xFFEAE0CF) : const Color(0xFF213448),
+                                color: isDarkMode ? const Color(0xFFF4F4F4) : const Color(0xFF1A3D64),
                               ),
                               tooltip: "Klasör Oluştur",
                             ),
@@ -464,13 +533,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                     color: isDarkMode
-                                        ? const Color(0xFF547792).withOpacity(0.2)
+                                        ? const Color(0xFF1D546C).withOpacity(0.2)
                                         : Colors.white.withOpacity(0.5),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                         color: isDarkMode
-                                            ? const Color(0xFF94B4C1).withOpacity(0.5)
-                                            : const Color(0xFF213448).withOpacity(0.1)),
+                                            ? const Color(0xFF1D546C).withOpacity(0.5)
+                                            : const Color(0xFF1A3D64).withOpacity(0.1)),
                                   ),
                                   child: Stack(
                                     children: [
@@ -482,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             folder.isSecure
                                                 ? Icons.lock_outline
                                                 : Icons.folder_open_rounded,
-                                            color: isDarkMode ? const Color(0xFF94B4C1) : const Color(0xFF547792),
+                                            color: isDarkMode ? const Color(0xFF1D546C) : const Color(0xFF1D546C),
                                             size: 32,
                                           ),
                                           Column(
@@ -492,8 +561,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 folder.name,
                                                 style: GoogleFonts.outfit(
                                                     color: isDarkMode
-                                                        ? const Color(0xFFEAE0CF)
-                                                        : const Color(0xFF213448),
+                                                        ? const Color(0xFFF4F4F4)
+                                                        : const Color(0xFF1A3D64),
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16),
                                                 maxLines: 1,
@@ -503,8 +572,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 "${folder.documents.length} Belge",
                                                 style: GoogleFonts.inter(
                                                     color: isDarkMode
-                                                        ? const Color(0xFF94B4C1)
-                                                        : const Color(0xFF547792),
+                                                        ? const Color(0xFF1D546C)
+                                                        : const Color(0xFF1D546C),
                                                     fontSize: 12),
                                               ),
                                             ],
@@ -526,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             child: Container(
                                                padding: const EdgeInsets.all(4),
                                                decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(8)),
-                                               child: Icon(Icons.vpn_key, color: isDarkMode ? const Color(0xFFEAE0CF) : const Color(0xFF213448), size: 16),
+                                               child: Icon(Icons.vpn_key, color: isDarkMode ? const Color(0xFFF4F4F4) : const Color(0xFF1A3D64), size: 16),
                                             ),
                                           ),
                                         ),
@@ -543,7 +612,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Spacer(),
                     
                     if (_isLoading)
-                      const Center(child: CircularProgressIndicator(color: Color(0xFF547792)))
+                      const Center(child: CircularProgressIndicator(color: Color(0xFF1D546C)))
                     else
                       Column(
                         children: [
@@ -552,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             title: "Belge Tara",
                             subtitle: "Kamerayı başlat",
                             icon: Icons.camera_alt_rounded,
-                            color: isDarkMode ? const Color(0xFF94B4C1) : const Color(0xFF213448),
+                            color: isDarkMode ? const Color(0xFF1D546C) : const Color(0xFF1A3D64),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -560,8 +629,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                             // Custom logic for colors below
-                            textColor: isDarkMode ? const Color(0xFF213448) : const Color(0xFFEAE0CF),
-                            subtitleColor: isDarkMode ? const Color(0xFF213448).withOpacity(0.7) : const Color(0xFFEAE0CF).withOpacity(0.7),
+                            textColor: isDarkMode ? Colors.white : const Color(0xFFF4F4F4),
+                            subtitleColor: isDarkMode ? Colors.white70 : const Color(0xFFF4F4F4).withOpacity(0.7),
                           ),
                           const SizedBox(height: 16),
                           _buildMenuButton(
@@ -569,11 +638,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             title: "Galeriden Seç",
                             subtitle: "Fotoğraf yükle",
                             icon: Icons.photo_library_rounded,
-                            color: isDarkMode ? const Color(0xFF547792) : Colors.white,
+                            color: isDarkMode ? const Color(0xFF1D546C) : Colors.white,
                             isOutlined: !isDarkMode, // Outlined in Light mode
                             onTap: _pickFromGallery,
-                            textColor: isDarkMode ? const Color(0xFFEAE0CF) : const Color(0xFF213448),
-                            subtitleColor: isDarkMode ? const Color(0xFFEAE0CF).withOpacity(0.7) : const Color(0xFF547792),
+                            textColor: isDarkMode ? const Color(0xFFF4F4F4) : const Color(0xFF1A3D64),
+                            subtitleColor: isDarkMode ? const Color(0xFFF4F4F4).withOpacity(0.7) : const Color(0xFF1D546C),
                           ),
                         ],
                       ),
@@ -618,7 +687,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: isOutlined ? Colors.transparent : color,
             borderRadius: BorderRadius.circular(20),
-            border: isOutlined ? Border.all(color: const Color(0xFF213448), width: 1) : null,
+            border: isOutlined ? Border.all(color: const Color(0xFF1A3D64), width: 1) : null,
             boxShadow: isOutlined 
                 ? null 
                 : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
@@ -628,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isOutlined ? const Color(0xFF213448).withOpacity(0.05) : Colors.white.withOpacity(0.2),
+                  color: isOutlined ? const Color(0xFF1A3D64).withOpacity(0.05) : Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: textColor ?? Colors.white, size: 28),

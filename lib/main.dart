@@ -38,39 +38,39 @@ class MyApp extends StatelessWidget {
           themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
           theme: ThemeData(
             brightness: Brightness.light,
-            primaryColor: const Color(0xFF213448), // Dark Slate
-            scaffoldBackgroundColor: const Color(0xFFEAE0CF), // Cream
+            primaryColor: const Color(0xFF1A3D64), // Medium Navy
+            scaffoldBackgroundColor: const Color(0xFFF4F4F4), // Off-White
             useMaterial3: true,
             fontFamily: GoogleFonts.inter().fontFamily,
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF213448), // Dark Slate
-              secondary: Color(0xFF547792), // Medium Slate
-              tertiary: Color(0xFF94B4C1), // Light Blue
+              primary: Color(0xFF1A3D64), // Medium Navy
+              secondary: Color(0xFF1D546C), // Teal/Petrol Blue
+              tertiary: Color(0xFF0C2B4E), // Dark Navy
               surface: Color(0xFFFFFFFF), // White
-              onSurface: Color(0xFF213448), // Dark Text
+              onSurface: Color(0xFF0C2B4E), // Dark Navy Text
             ),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFFEAE0CF),
-              foregroundColor: Color(0xFF213448),
+              backgroundColor: Color(0xFFF4F4F4),
+              foregroundColor: Color(0xFF1A3D64),
               elevation: 0,
             ),
           ),
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            primaryColor: const Color(0xFF94B4C1), // Light Blue
-            scaffoldBackgroundColor: const Color(0xFF213448), // Dark Slate
+            primaryColor: const Color(0xFF1D546C), // Teal/Petrol Blue
+            scaffoldBackgroundColor: const Color(0xFF0C2B4E), // Dark Navy
             useMaterial3: true,
             fontFamily: GoogleFonts.inter().fontFamily,
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF94B4C1), // Light Blue
-              secondary: Color(0xFFEAE0CF), // Cream
-              tertiary: Color(0xFF547792), // Medium Slate
-              surface: Color(0xFF2A3D52), // Slightly Lighter Dark Slate for contrast
-              onSurface: Color(0xFFEAE0CF), // Cream Text
+              primary: Color(0xFF1D546C), // Teal/Petrol Blue
+              secondary: Color(0xFF1A3D64), // Medium Navy
+              tertiary: Color(0xFFF4F4F4), // Off-White
+              surface: Color(0xFF1A3D64), // Medium Navy for contrast
+              onSurface: Color(0xFFF4F4F4), // Off-White Text
             ),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF213448),
-              foregroundColor: Color(0xFFEAE0CF),
+              backgroundColor: Color(0xFF0C2B4E),
+              foregroundColor: Color(0xFFF4F4F4),
               elevation: 0,
             ),
           ),

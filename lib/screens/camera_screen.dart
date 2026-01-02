@@ -94,7 +94,7 @@ class _CameraScreenState extends State<CameraScreen> with TickerProviderStateMix
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(color: Color(0xFF213448)),
+              const CircularProgressIndicator(color: Color(0xFF1A3D64)),
               const SizedBox(height: 16),
               Text(
                 "Kenarlar Hesaplanıyor...", 
@@ -350,11 +350,11 @@ class _CameraScreenState extends State<CameraScreen> with TickerProviderStateMix
                                     width: 50,
                                     height: 50,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF94B4C1),
+                                      color: const Color(0xFF1D546C),
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFF94B4C1).withOpacity(0.4),
+                                          color: const Color(0xFF1D546C).withOpacity(0.4),
                                           blurRadius: 10,
                                           spreadRadius: 2,
                                         )
