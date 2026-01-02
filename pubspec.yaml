@@ -1,5 +1,5 @@
 name: scanhub
-description: "Rectify: Gelişmiş Mobil Belge Tarama Uygulaması."
+description: "VeloxDoc: TFLite ve OpenCV destekli, hibrit mimariye sahip yeni nesil mobil belge tarama ve dijital arşivleme çözümü."
 publish_to: 'none'
 version: 1.0.0+1
 
