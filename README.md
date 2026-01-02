@@ -95,7 +95,6 @@ Neden tek bir yöntem yerine hibrit bir yapı kullanıldı?
 
 ---
 
-### Görsel Pipeline Analizi
 
 ### Görsel Pipeline Analizi
 VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik detaylar:
