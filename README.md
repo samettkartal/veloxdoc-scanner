@@ -151,7 +151,7 @@ VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik det
 
 ---
 
-## 📸 Uygulama Akışı (Visual Workflow)
+##  Uygulama Akışı (Visual Workflow)
 
 <table>
   <tr>
@@ -198,7 +198,7 @@ VeloxDoc motorunun bir belge karesini işlerken izlediği adımlar ve teknik det
 
 ---
 
-## 🛠️ Kurulum ve Çalıştırma (Installation)
+##  Kurulum ve Çalıştırma (Installation)
 
 ### Gereksinimler (Prerequisites)
 - **Flutter SDK:** >=3.2.3 <4.0.0
@@ -236,7 +236,7 @@ flutter run --release
 
 ---
 
-## 📄 Lisans
+##  Lisans
 Bu proje MIT Lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakınız.
 
 ---
