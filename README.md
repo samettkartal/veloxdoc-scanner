@@ -17,7 +17,7 @@ Tüm işlem hattı (Image Processing Pipeline) cihaz üzerinde (on-device) ve in
 
 ---
 
-## 🚀 Temel Özellikler
+##  Temel Özellikler
 
 | Özellik | Açıklama | Teknoloji Yığını |
 | :--- | :--- | :--- |
@@ -29,7 +29,7 @@ Tüm işlem hattı (Image Processing Pipeline) cihaz üzerinde (on-device) ve in
 
 ---
 
-## 🏗️ Proje Mimarisi
+##  Proje Mimarisi
 
 VeloxDoc, sürdürülebilirlik ve test edilebilirlik için **Clean Architecture** prensiplerine sıkı sıkıya bağlıdır.
 
@@ -56,7 +56,7 @@ lib/
 
 ---
 
-## 🧠 Teknik Mimari ve Algoritmik Akış
+##  Teknik Mimari ve Algoritmik Akış
 
 Sistemin kalbi, milisaniyeler içinde çalışan üç aşamalı bir görüntü işleme motorudur.
 
